@@ -4,6 +4,12 @@ set -e
 DOTFILES="$HOME/.dotfiles"
 OS="$(uname -s)"
 
+# Self-clone if not already present
+if [ ! -d "$DOTFILES" ]; then
+  git clone https://github.com/ozzgio/dotfiles.git "$DOTFILES"
+  exec "$DOTFILES/bootstrap.sh"
+fi
+
 echo "→ Installing dependencies..."
 
 setup_mac() {
