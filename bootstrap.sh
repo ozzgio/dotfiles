@@ -19,15 +19,39 @@ setup_mac() {
 
 setup_linux() {
   sudo apt-get update -qq
-  sudo apt-get install -y ripgrep fd-find curl git
-  curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
-  chmod +x nvim-linux-x86_64.appimage
-  sudo mv nvim-linux-x86_64.appimage /usr/local/bin/nvim
+  sudo apt-get install -y ripgrep fd-find fzf curl git
+
+  # neovim — latest via AppImage
+  if ! command -v nvim &>/dev/null; then
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
+    chmod +x nvim-linux-x86_64.appimage
+    sudo mv nvim-linux-x86_64.appimage /usr/local/bin/nvim
+  fi
+
+  # gh — GitHub CLI
+  if ! command -v gh &>/dev/null; then
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+      | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+      | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    sudo apt-get update -qq && sudo apt-get install -y gh
+  fi
+
+  # lazygit — latest binary
+  if ! command -v lazygit &>/dev/null; then
+    LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
+      | grep -Po '"tag_name": *"v\K[^"]*')
+    curl -Lo /tmp/lazygit.tar.gz \
+      "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    tar -xf /tmp/lazygit.tar.gz -C /tmp lazygit
+    sudo install /tmp/lazygit -D -t /usr/local/bin/
+    rm /tmp/lazygit.tar.gz /tmp/lazygit
+  fi
 }
 
 case "$OS" in
-  Darwin) command -v nvim &>/dev/null || setup_mac ;;
-  Linux)  command -v nvim &>/dev/null || setup_linux ;;
+  Darwin) setup_mac ;;
+  Linux)  setup_linux ;;
 esac
 
 echo "→ Symlinking configs..."
