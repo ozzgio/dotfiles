@@ -28,7 +28,6 @@ if OS.mac?
   cask "numi"
   cask "obsidian"
   cask "stats"
-  cask "vivaldi"
   cask "zen"
   # cask "docker"  # large — install manually when needed
 end
