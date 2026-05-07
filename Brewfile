@@ -15,18 +15,20 @@ brew "zsh-syntax-highlighting"
 # Heroku CLI — logs and config only
 brew "heroku/brew/heroku"
 
-# Fonts
-cask "font-jetbrains-mono-nerd-font"
+if OS.mac?
+  # Fonts
+  cask "font-jetbrains-mono-nerd-font"
 
-# Apps
-cask "bitwarden"
-cask "discord"
-cask "hiddenbar"
-cask "iterm2"
-cask "karabiner-elements"
-cask "numi"
-cask "obsidian"
-cask "stats"
-cask "vivaldi"
-cask "zen"
-# cask "docker"  # large — install manually when needed
+  # Apps
+  cask "bitwarden"
+  cask "discord"
+  cask "hiddenbar"
+  cask "iterm2"
+  cask "karabiner-elements"
+  cask "numi"
+  cask "obsidian"
+  cask "stats"
+  cask "vivaldi"
+  cask "zen"
+  # cask "docker"  # large — install manually when needed
+end
