@@ -1,2 +1,11 @@
 export EDITOR=nvim
 export VISUAL=nvim
+
+# Lazy NVM — loads on first use, keeps shell startup instant
+export NVM_DIR="$HOME/.nvm"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  nvm()  { unset -f nvm node npm npx; source "$NVM_DIR/nvm.sh"; nvm "$@"; }
+  node() { unset -f nvm node npm npx; source "$NVM_DIR/nvm.sh"; node "$@"; }
+  npm()  { unset -f nvm node npm npx; source "$NVM_DIR/nvm.sh"; npm "$@"; }
+  npx()  { unset -f nvm node npm npx; source "$NVM_DIR/nvm.sh"; npx "$@"; }
+fi
