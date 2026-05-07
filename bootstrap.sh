@@ -14,7 +14,7 @@ echo "→ Installing dependencies..."
 setup_mac() {
   command -v brew &>/dev/null || \
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  brew install neovim ripgrep fd lazygit
+  brew bundle --file="$DOTFILES/Brewfile"
 }
 
 setup_linux() {
