@@ -1,0 +1,4 @@
+personality = "pragmatic"
+approvals_reviewer = "user"
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
