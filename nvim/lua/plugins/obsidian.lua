@@ -40,6 +40,7 @@ return {
           opts = { buffer = true, expr = true },
         },
       },
+      picker = { name = "fzf-lua" },
       preferred_link_style = "wiki",
       new_notes_location = "current_dir",
       wiki_link_func = "use_alias_only",
