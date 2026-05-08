@@ -7,7 +7,7 @@ local opt = vim.opt
 
 opt.clipboard = "unnamedplus"
 opt.spell = true
-opt.spelllang = { "en_us", "it" }
+opt.spelllang = { "en_us" }
 opt.number = true -- Show line numbers
 opt.relativenumber = false
 opt.shiftwidth = 2 -- Size of an indent
