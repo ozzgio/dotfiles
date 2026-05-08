@@ -24,12 +24,25 @@ return {
     "mfussenegger/nvim-lint",
     opts = function(_, opts)
       local config = vim.fn.expand("~/.markdownlint.json")
+      opts.linters_by_ft = opts.linters_by_ft or {}
+      opts.linters_by_ft.markdown = {}
+      opts.linters_by_ft["markdown.mdx"] = {}
       opts.linters = opts.linters or {}
       opts.linters["markdownlint-cli2"] = {
         args = { "--config", config, "-" },
       }
       return opts
     end,
+  },
+
+  -- Keep markdown editing quiet: spellcheck only, no LSP diagnostics.
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      servers = {
+        marksman = { enabled = false },
+      },
+    },
   },
 
   -- render-markdown: make Obsidian notes look great
