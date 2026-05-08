@@ -18,6 +18,16 @@ vim.keymap.set("t", "<C-j>", [[<C-\><C-n><C-w>j]], { desc = "Go to lower window"
 vim.keymap.set("t", "<C-k>", [[<C-\><C-n><C-w>k]], { desc = "Go to upper window" })
 vim.keymap.set("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "Go to right window" })
 
+-- Resize windows with Alt-h/j/k/l
+vim.keymap.set("n", "<M-h>", "<cmd>vertical resize -4<cr>", { desc = "Decrease window width" })
+vim.keymap.set("n", "<M-l>", "<cmd>vertical resize +4<cr>", { desc = "Increase window width" })
+vim.keymap.set("n", "<M-j>", "<cmd>resize +2<cr>", { desc = "Increase window height" })
+vim.keymap.set("n", "<M-k>", "<cmd>resize -2<cr>", { desc = "Decrease window height" })
+vim.keymap.set("t", "<M-h>", [[<C-\><C-n><cmd>vertical resize -4<cr>]], { desc = "Decrease window width" })
+vim.keymap.set("t", "<M-l>", [[<C-\><C-n><cmd>vertical resize +4<cr>]], { desc = "Increase window width" })
+vim.keymap.set("t", "<M-j>", [[<C-\><C-n><cmd>resize +2<cr>]], { desc = "Increase window height" })
+vim.keymap.set("t", "<M-k>", [[<C-\><C-n><cmd>resize -2<cr>]], { desc = "Decrease window height" })
+
 -- Terminal splits (snacks terminal — LazyVim already binds <C-/> for floating)
 vim.keymap.set("n", "<leader>th", function()
   Snacks.terminal(nil, { win = { position = "bottom", height = 0.3 } })
