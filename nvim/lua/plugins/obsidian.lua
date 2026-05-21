@@ -1,3 +1,21 @@
+local function first_existing_path(paths)
+  local uv = vim.uv or vim.loop
+
+  for _, path in ipairs(paths) do
+    local expanded = vim.fn.expand(path)
+    if uv.fs_stat(expanded) then
+      return expanded
+    end
+  end
+
+  return vim.fn.expand(paths[1])
+end
+
+local vault_path = first_existing_path({
+  "~/obsidian-vault",
+  "~/Documents/obsidian-vault",
+})
+
 return {
   {
     "epwalsh/obsidian.nvim",
@@ -9,7 +27,7 @@ return {
       workspaces = {
         {
           name = "personal",
-          path = "~/Documents/obsidian-vault",
+          path = vault_path,
         },
       },
       daily_notes = {

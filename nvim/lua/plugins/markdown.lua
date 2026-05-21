@@ -1,24 +1,4 @@
 return {
-  -- Frontmatter visual highlighting for markdown/org files
-  {
-    "lukas-reineke/headlines.nvim",
-    dependencies = "nvim-treesitter/nvim-treesitter",
-    ft = { "markdown", "org", "norg" },
-    opts = {
-      markdown = {
-        headline_highlights = { "Headline1", "Headline2", "Headline3", "Headline4" },
-        codeblock_highlight = "CodeBlock",
-        dash_highlight = "Dash",
-        dash_string = "─",
-        quote_highlight = "Quote",
-        quote_string = "┃",
-        fat_headlines = true,
-        fat_headline_upper_string = "▄",
-        fat_headline_lower_string = "▀",
-      },
-    },
-  },
-
   -- Fix markdownlint: always use the global config so rules are respected
   {
     "mfussenegger/nvim-lint",
@@ -42,6 +22,16 @@ return {
       servers = {
         marksman = { enabled = false },
       },
+    },
+  },
+
+  -- Keep browser preview easy to reach from terminal Neovim sessions.
+  {
+    "iamcco/markdown-preview.nvim",
+    cmd = { "MarkdownPreview", "MarkdownPreviewStop", "MarkdownPreviewToggle" },
+    ft = { "markdown" },
+    keys = {
+      { "<leader>mp", "<cmd>MarkdownPreviewToggle<cr>", desc = "Markdown Preview" },
     },
   },
 
