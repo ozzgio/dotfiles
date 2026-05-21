@@ -2,3 +2,17 @@ personality = "pragmatic"
 approvals_reviewer = "user"
 model = "gpt-5.4"
 model_reasoning_effort = "medium"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-05-15T16:34:53Z"
+source_type = "local"
+source = "/Users/ozzo/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[projects."/Volumes/code/portfolio"]
+trust_level = "trusted"
+
+[projects."/Users/ozzo/Documents/obsidian-vault"]
+trust_level = "trusted"
+
+[plugins."browser@openai-bundled"]
+enabled = true
