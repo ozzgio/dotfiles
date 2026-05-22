@@ -4,6 +4,9 @@ return {
     opts = {
       ensure_installed = {
         "prettier",
+        "stylua",
+        "rubocop",
+        "black",
       },
     },
   },
@@ -27,6 +30,9 @@ return {
         markdown = { "prettier" },
         mdx = { "prettier" },
         graphql = { "prettier" },
+        lua = { "stylua" },
+        ruby = { "rubocop" },
+        python = { "black" },
       },
     },
   },
