@@ -45,3 +45,5 @@ vim.keymap.set("n", "<leader>tv", function()
 end, { desc = "Terminal (vertical split)" })
 -- Keep the old buffer terminal for quick one-off commands
 vim.keymap.set("n", "<leader>tt", "<cmd>terminal<cr>", { desc = "Terminal (buffer)" })
+
+vim.keymap.set("n", "<leader>fr", "<cmd>RenameFile<cr>", { desc = "Rename current file" })
