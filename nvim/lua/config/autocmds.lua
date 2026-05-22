@@ -15,3 +15,16 @@ vim.api.nvim_create_autocmd("FileType", {
     pcall(vim.diagnostic.enable, false, { bufnr = args.buf })
   end,
 })
+
+vim.api.nvim_create_user_command("RenameFile", function()
+  local old = vim.fn.expand("%:p")
+  local new = vim.fn.input("New name: ", vim.fn.expand("%:p"), "file")
+
+  if new == "" or new == old then
+    return
+  end
+
+  vim.cmd("saveas " .. vim.fn.fnameescape(new))
+  vim.fn.delete(old)
+  vim.cmd("bwipeout " .. vim.fn.fnameescape(old))
+end, {})
