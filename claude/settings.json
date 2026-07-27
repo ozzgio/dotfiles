@@ -14,6 +14,7 @@
       }
     ]
   },
+  "agentPushNotifEnabled": true,
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark-ansi",
   "tui": "fullscreen"

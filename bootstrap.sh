@@ -54,6 +54,11 @@ setup_linux() {
   if ! command -v herdr &>/dev/null; then
     curl -fsSL https://herdr.dev/install.sh | sh
   fi
+
+  # codex — OpenAI CLI
+  if ! command -v codex &>/dev/null; then
+    curl -fsSL https://chatgpt.com/codex/install.sh | sh
+  fi
 }
 
 case "$OS" in
@@ -73,7 +78,16 @@ ln -sfn "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
 
 # codex
 mkdir -p "$HOME/.codex"
-ln -sfn "$DOTFILES/codex/config.toml" "$HOME/.codex/config.toml"
+codex_template="$DOTFILES/codex/config.$OS.toml"
+if [ ! -f "$codex_template" ]; then
+  codex_template="$DOTFILES/codex/config.base.toml"
+fi
+if [ -L "$HOME/.codex/config.toml" ]; then
+  unlink "$HOME/.codex/config.toml"
+fi
+if [ ! -f "$HOME/.codex/config.toml" ]; then
+  cp "$codex_template" "$HOME/.codex/config.toml"
+fi
 ln -sfn "$DOTFILES/codex/hooks.json" "$HOME/.codex/hooks.json"
 
 # herdr

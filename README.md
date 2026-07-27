@@ -16,8 +16,28 @@ curl -fsSL https://raw.githubusercontent.com/ozzgio/dotfiles/main/bootstrap.sh |
 | Herdr | `~/.config/herdr/config.toml` |
 | tmux | `~/.tmux.conf` |
 | Claude | `~/.claude/settings.json` |
-| Codex | `~/.codex/config.toml` |
+| Codex | host-local `~/.codex/config.toml` from `codex/config.<OS>.toml` |
 | Shell exports (EDITOR, VISUAL) | sourced into `.zshrc` / `.bashrc` |
+
+## Shell shortcuts
+
+| Command | Action |
+|---------|--------|
+| `hnuc` | Open Herdr on the NUC, trying LAN first and Tailscale second |
+| `snuc` | SSH to the NUC, trying LAN first and Tailscale second |
+| `hd` | Run `herdr` |
+| `hdr` | Run `herdr --remote` |
+| `cc` / `cy` | Run Claude Code with permission prompts skipped |
+| `cx` / `cdx` | Run Codex with `--yolo` |
+| `ccglm` | Run Claude Code through the local `claude-glm` Z.ai/GLM settings |
+
+Private AI provider secrets are loaded from:
+
+```bash
+~/.config/ai-secrets.env
+```
+
+Use [shell/ai-secrets.example.env](shell/ai-secrets.example.env) as the template. Keep the real file outside git.
 
 ## Terminal-first AI workflow
 
@@ -39,6 +59,14 @@ Inside Herdr:
 | `<prefix> alt-a` | Start Claude Code in a pane |
 | `<prefix> alt-m` | Start GLM in a pane |
 
+On macOS, set iTerm2 Option handling so Herdr receives these shortcuts:
+
+```text
+iTerm2 -> Settings -> Profiles -> Keys -> Left Option key -> Esc+
+```
+
+Do the same for Right Option if you use it.
+
 In LazyVim:
 
 | Key | Action |
@@ -50,7 +78,7 @@ In LazyVim:
 For remote work on the NUC, either SSH first and run `herdr`, or use the local thin client:
 
 ```bash
-herdr --remote nuc
+hnuc
 ```
 
 Use tmux when you want a lighter terminal/session workflow without agent status tracking:
