@@ -17,6 +17,21 @@ fi
 
 alias hd="herdr"
 alias hdr="herdr --remote"
+alias cx="codex --yolo"
+alias cdx="codex --yolo"
+alias cc="claude --dangerously-skip-permissions"
+alias cy="claude --dangerously-skip-permissions"
+
+ccglm() {
+  if command -v claude-glm >/dev/null 2>&1; then
+    claude-glm --dangerously-skip-permissions "$@"
+  elif command -v glm >/dev/null 2>&1; then
+    glm --dangerously-skip-permissions "$@"
+  else
+    printf 'Neither claude-glm nor glm is available on PATH.\n' >&2
+    return 127
+  fi
+}
 
 hnuc() {
   herdr --remote nuc-local "$@" || herdr --remote nuc-tail "$@"
