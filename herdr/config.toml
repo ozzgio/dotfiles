@@ -4,17 +4,23 @@ onboarding = false
 shell_mode = "auto"
 new_cwd = "follow"
 
+[keys]
+# Project/workspace picker; keep prefix+p for the previous tab.
+workspace_picker = ["prefix+w", "prefix+shift+p"]
+
 [worktrees]
 directory = "~/.herdr/worktrees"
 
 [theme]
-name = "catppuccin"
+name = "tokyo-night"
 
+auto_switch = false
 [ui]
 agent_panel_sort = "spaces"
 
+show_agent_labels_on_pane_borders = true
 [ui.toast]
-delivery = "terminal"
+delivery = "herdr"
 delay_seconds = 1
 
 [ui.sidebar.agents]

@@ -1,23 +1,20 @@
 return {
   {
-    "catppuccin/nvim",
+    "folke/tokyonight.nvim",
     opts = {
-      transparent_background = false,
-      term_colors = true,
+      transparent = false,
+      terminal_colors = true,
       styles = {
-        comments = { "italic" },
-        conditionals = { "italic" },
+        comments = { italic = true },
       },
-      custom_highlights = function(colors)
-        return {
-          FloatBorder = { fg = colors.blue },
-          NormalFloat = { bg = colors.mantle },
-          NeoTreeNormal = { bg = colors.mantle },
-          NeoTreeNormalNC = { bg = colors.mantle },
-          SnacksPickerBorder = { fg = colors.blue },
-          SnacksPickerTitle = { fg = colors.mauve, style = { "bold" } },
-          WhichKeyBorder = { fg = colors.blue },
-        }
+      on_highlights = function(highlights, colors)
+        highlights.FloatBorder = { fg = colors.blue }
+        highlights.NormalFloat = { bg = colors.bg_dark }
+        highlights.NeoTreeNormal = { bg = colors.bg_dark }
+        highlights.NeoTreeNormalNC = { bg = colors.bg_dark }
+        highlights.SnacksPickerBorder = { fg = colors.blue }
+        highlights.SnacksPickerTitle = { fg = colors.magenta, bold = true }
+        highlights.WhichKeyBorder = { fg = colors.blue }
       end,
     },
   },
