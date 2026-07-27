@@ -14,6 +14,8 @@ echo "→ Installing dependencies..."
 setup_mac() {
   command -v brew &>/dev/null || \
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  brew tap heroku/brew >/dev/null
+  brew trust --formula heroku/brew/heroku >/dev/null || true
   brew bundle --file="$DOTFILES/Brewfile"
 }
 
@@ -105,6 +107,9 @@ case "$OS" in
   Darwin)
     add_source "$HOME/.zshrc"
     add_source "$HOME/.bashrc"
+    if [ -f "$HOME/Library/Preferences/com.googlecode.iterm2.plist" ]; then
+      bash "$DOTFILES/iterm/apply-catppuccin.sh" || true
+    fi
     ;;
   Linux)
     add_source "$HOME/.bashrc"
