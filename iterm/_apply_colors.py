@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Patch the iTerm2 Default profile colors from a .itermcolors file."""
+"""Patch the iTerm2 Default profile colors and appearance."""
 import plistlib, sys, os, subprocess
 
 COLOR_KEYS = [
@@ -28,6 +28,18 @@ for p in profiles:
             if k in colors:
                 p[k] = colors[k]
         p["Color Preset Name"] = ""
+        p["Transparency"] = 0.06
+        p["Blur"] = True
+        p["Blur Radius"] = 8.0
+        p["Use Bright Bold"] = True
+        p["Cursor Type"] = 2
+        p["Blinking Cursor"] = True
+        p["Cursor Boost"] = 0.12
+        p["Minimum Contrast"] = 0.08
+        p["Vertical Spacing"] = 1.05
+        p["Horizontal Spacing"] = 1.0
+        p["Silence Bell"] = True
+        p["Visual Bell"] = False
         patched = True
         break
 
