@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+current_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+[ -n "$current_root" ] || {
+  printf 'Not inside a git repository.\n' >&2
+  exit 1
+}
+
+main_root="$(git worktree list --porcelain | awk 'NR == 1 && $1 == "worktree" {print substr($0, 10)}')"
+[ -n "$main_root" ] || main_root="$current_root"
+
+choice="$(
+  {
+    printf '[new worktree]\n'
+    git -C "$main_root" worktree list --porcelain |
+      awk '
+        $1 == "worktree" { path = substr($0, 10) }
+        $1 == "branch" {
+          branch = substr($0, 8)
+          sub("^refs/heads/", "", branch)
+          print branch "\t" path
+        }
+      '
+  } | fzf --prompt='worktree > ' --height=100% --reverse
+)"
+[ -n "$choice" ] || exit 0
+
+if [ "$choice" = "[new worktree]" ]; then
+  read -r -p "branch name > " branch
+  [ -n "$branch" ] || exit 0
+  safe_branch="$(printf '%s' "$branch" | sed 's#[/[:space:]]#-#g')"
+  repo_name="$(basename "$main_root")"
+  target="$(dirname "$main_root")/${repo_name}-worktrees/${safe_branch}"
+  mkdir -p "$(dirname "$target")"
+  git -C "$main_root" worktree add -b "$branch" "$target"
+else
+  branch="${choice%%$'\t'*}"
+  target="${choice#*$'\t'}"
+fi
+
+repo_name="$(basename "$main_root")"
+session="$(printf '%s-%s' "$repo_name" "$branch" | tr -c '[:alnum:]_-' '_')"
+
+if ! tmux has-session -t "$session" 2>/dev/null; then
+  tmux new-session -ds "$session" -c "$target"
+fi
+
+if [ -n "${TMUX:-}" ]; then
+  tmux switch-client -t "$session"
+else
+  tmux attach-session -t "$session"
+fi

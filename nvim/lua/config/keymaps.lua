@@ -48,3 +48,53 @@ vim.keymap.set("n", "<leader>tt", "<cmd>terminal<cr>", { desc = "Terminal (buffe
 vim.keymap.set("n", "<leader>tn", "<cmd>tabnew | terminal<cr>", { desc = "Terminal (new tab)" })
 
 vim.keymap.set("n", "<leader>fr", "<cmd>RenameFile<cr>", { desc = "Rename current file" })
+
+local function relative_file_path()
+  local file = vim.api.nvim_buf_get_name(0)
+  if file == "" then
+    return nil
+  end
+
+  local git_root = vim.fn.systemlist({ "git", "-C", vim.fn.fnamemodify(file, ":h"), "rev-parse", "--show-toplevel" })[1]
+  if vim.v.shell_error == 0 and git_root and git_root ~= "" then
+    return vim.fn.fnamemodify(file, ":p"):sub(#git_root + 2)
+  end
+
+  return vim.fn.fnamemodify(file, ":~:.")
+end
+
+local function copy_agent_prompt(use_selection)
+  local file = relative_file_path()
+  if not file then
+    vim.notify("No file path for this buffer", vim.log.levels.WARN)
+    return
+  end
+
+  local location = file
+  if use_selection then
+    local start_line = vim.fn.line("'<")
+    local end_line = vim.fn.line("'>")
+    if start_line > end_line then
+      start_line, end_line = end_line, start_line
+    end
+    location = string.format("%s:%d-%d", file, start_line, end_line)
+  end
+
+  local prompt = vim.fn.input("Prompt: ")
+  local message = location
+  if prompt ~= "" then
+    message = string.format("%s\n\n%s", location, prompt)
+  end
+
+  vim.fn.setreg("+", message)
+  vim.notify("Copied agent prompt: " .. location)
+end
+
+vim.keymap.set("n", "<leader>cp", function()
+  copy_agent_prompt(false)
+end, { desc = "Copy file prompt for agent" })
+
+vim.keymap.set("v", "<leader>cp", function()
+  vim.cmd("normal! \27")
+  copy_agent_prompt(true)
+end, { desc = "Copy selection prompt for agent" })

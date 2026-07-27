@@ -19,7 +19,7 @@ setup_mac() {
 
 setup_linux() {
   sudo apt-get update -qq
-  sudo apt-get install -y ripgrep fd-find fzf curl git
+  sudo apt-get install -y ripgrep fd-find fzf curl git tmux
 
   # neovim — latest via AppImage
   if ! command -v nvim &>/dev/null; then
@@ -47,6 +47,11 @@ setup_linux() {
     sudo install /tmp/lazygit -D -t /usr/local/bin/
     rm /tmp/lazygit.tar.gz /tmp/lazygit
   fi
+
+  # herdr — terminal-native agent multiplexer
+  if ! command -v herdr &>/dev/null; then
+    curl -fsSL https://herdr.dev/install.sh | sh
+  fi
 }
 
 case "$OS" in
@@ -67,6 +72,23 @@ ln -sfn "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
 # codex
 mkdir -p "$HOME/.codex"
 ln -sfn "$DOTFILES/codex/config.toml" "$HOME/.codex/config.toml"
+ln -sfn "$DOTFILES/codex/hooks.json" "$HOME/.codex/hooks.json"
+
+# herdr
+mkdir -p "$HOME/.config/herdr"
+ln -sfn "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+
+# tmux
+ln -sfn "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
+
+# local scripts
+mkdir -p "$HOME/.local/bin"
+for script in "$DOTFILES"/bin/*; do
+  [ -f "$script" ] || continue
+  ln -sfn "$script" "$HOME/.local/bin/$(basename "$script")"
+done
+
+"$DOTFILES/bin/herdr-install-integrations"
 
 # shell exports — append source line if not already present
 add_source() {
@@ -80,8 +102,14 @@ add_source() {
 }
 
 case "$OS" in
-  Darwin) add_source "$HOME/.zshrc" ;;
-  Linux)  add_source "$HOME/.bashrc" ;;
+  Darwin)
+    add_source "$HOME/.zshrc"
+    add_source "$HOME/.bashrc"
+    ;;
+  Linux)
+    add_source "$HOME/.bashrc"
+    add_source "$HOME/.zshrc"
+    ;;
 esac
 
 echo "✓ Done. Run: nvim"

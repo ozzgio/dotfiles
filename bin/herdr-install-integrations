@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command -v herdr >/dev/null 2>&1 || exit 0
+
+herdr integration install codex >/dev/null || true
+herdr integration install claude >/dev/null || true
+
+command -v python3 >/dev/null 2>&1 || exit 0
+
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+home = str(Path.home())
+
+
+def normalize(value):
+    if isinstance(value, dict):
+        return {key: normalize(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [normalize(item) for item in value]
+    if isinstance(value, str):
+        return (
+            value.replace(f"bash '{home}/.codex/herdr-agent-state.sh' session", "bash $HOME/.codex/herdr-agent-state.sh session")
+            .replace(f"bash '{home}/.claude/hooks/herdr-agent-state.sh' session", "bash $HOME/.claude/hooks/herdr-agent-state.sh session")
+        )
+    return value
+
+
+for path in [Path.home() / ".codex/hooks.json", Path.home() / ".claude/settings.json"]:
+    if not path.exists():
+        continue
+
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        continue
+
+    data = normalize(data)
+    session_start = data.get("hooks", {}).get("SessionStart") if isinstance(data, dict) else None
+    if isinstance(session_start, list):
+        seen = set()
+        deduped = []
+        for item in session_start:
+            key = json.dumps(item, sort_keys=True)
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(item)
+        data["hooks"]["SessionStart"] = deduped
+
+    path.write_text(json.dumps(data, indent=2) + "\n")
+PY

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+agent="${1:-}"
+if [ -z "$agent" ]; then
+  printf 'Usage: herdr-agent <command> [args...]\n' >&2
+  exit 2
+fi
+shift
+
+candidate_paths=(
+  "$HOME/.local/bin"
+  "$HOME/.npm-global/bin"
+  "$HOME/.bun/bin"
+  "$HOME/.nvm/current/bin"
+  "/opt/homebrew/bin"
+  "/usr/local/bin"
+  "/home/linuxbrew/.linuxbrew/bin"
+)
+
+for dir in "${candidate_paths[@]}"; do
+  [ -d "$dir" ] || continue
+  case ":$PATH:" in
+    *":$dir:"*) ;;
+    *) PATH="$dir:$PATH" ;;
+  esac
+done
+export PATH
+
+if command -v "$agent" >/dev/null 2>&1; then
+  exec "$agent" "$@"
+fi
+
+printf 'Command not found: %s\n\n' "$agent" >&2
+printf 'Checked PATH:\n%s\n\n' "$PATH" >&2
+printf 'Install it on this machine or add its bin directory to PATH.\n' >&2
+exit 127

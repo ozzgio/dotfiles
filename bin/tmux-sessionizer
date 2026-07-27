@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+default_roots=(
+  "$HOME/code"
+  "$HOME/Documents/code"
+  "$HOME/projects"
+  "$HOME/.dotfiles"
+  "/Volumes/P3 1/repo"
+)
+
+roots=()
+if [ -n "${TMS_DIRS:-}" ]; then
+  IFS=':' read -r -a roots <<< "$TMS_DIRS"
+else
+  roots=("${default_roots[@]}")
+fi
+
+find_projects() {
+  for root in "${roots[@]}"; do
+    [ -d "$root" ] || continue
+    find "$root" -mindepth 1 -maxdepth 3 -type d -name .git -prune -print 2>/dev/null |
+      sed 's#/.git$##'
+  done
+}
+
+selected="$(find_projects | sort -u | fzf --prompt='project > ' --height=100% --reverse)"
+[ -n "$selected" ] || exit 0
+
+branch="$(git -C "$selected" branch --show-current 2>/dev/null || true)"
+name="$(basename "$selected")"
+[ -n "$branch" ] && name="$name-$branch"
+session="$(printf '%s' "$name" | tr -c '[:alnum:]_-' '_')"
+
+if ! tmux has-session -t "$session" 2>/dev/null; then
+  tmux new-session -ds "$session" -c "$selected"
+fi
+
+if [ -n "${TMUX:-}" ]; then
+  tmux switch-client -t "$session"
+else
+  tmux attach-session -t "$session"
+fi

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+target="${1:-}"
+root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+
+if [ -z "$root" ]; then
+  printf '\nNot in a git repository.\n\n'
+  printf 'Focus a pane that is inside a repo, or start Herdr from one:\n\n'
+  printf '  cd /path/to/repo && herdr\n\n'
+  printf 'Then run the Zdiff shortcut again.\n'
+  printf '\nPress Enter to close...'
+  read -r _ || true
+  exit 0
+fi
+
+cd "$root"
+
+if [ -n "$target" ]; then
+  exec nvim -c "Zdiff $target"
+else
+  exec nvim -c Zdiff
+fi
