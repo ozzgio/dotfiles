@@ -10,6 +10,9 @@ directory = "~/.herdr/worktrees"
 [theme]
 name = "catppuccin"
 
+[ui]
+agent_panel_sort = "spaces"
+
 [ui.toast]
 delivery = "terminal"
 delay_seconds = 1
@@ -76,5 +79,5 @@ description = "run Claude Code"
 [[keys.command]]
 key = "prefix+alt+m"
 type = "pane"
-command = "herdr-agent glm"
+command = "herdr-ccglm"
 description = "run GLM"

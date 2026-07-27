@@ -23,8 +23,8 @@ alias cc="claude --dangerously-skip-permissions"
 alias cy="claude --dangerously-skip-permissions"
 
 ccglm() {
-  if command -v claude-glm >/dev/null 2>&1; then
-    claude-glm --dangerously-skip-permissions "$@"
+  if type claude-glm >/dev/null 2>&1; then
+    claude-glm "$@"
   elif command -v glm >/dev/null 2>&1; then
     glm --dangerously-skip-permissions "$@"
   else
