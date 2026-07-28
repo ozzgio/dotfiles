@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  printf 'Usage: iterm-open-url URL\n' >&2
+  exit 64
+fi
+
+url="$1"
+case "$url" in
+  http://* | https://*) ;;
+  *)
+    printf 'Refusing to open a non-HTTP URL.\n' >&2
+    exit 65
+    ;;
+esac
+
+encoded_url="$(printf '%s' "$url" | base64 -w 0)"
+printf '\033]1337;OpenURL=:%s\a' "$encoded_url"
