@@ -12,10 +12,8 @@ fi
 echo "→ Installing dependencies..."
 
 setup_mac() {
-  command -v brew &>/dev/null || \
+  command -v brew &>/dev/null ||
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  brew tap heroku/brew >/dev/null
-  brew trust --formula heroku/brew/heroku >/dev/null || true
   brew bundle --file="$DOTFILES/Brewfile"
 }
 
@@ -32,17 +30,17 @@ setup_linux() {
 
   # gh — GitHub CLI
   if ! command -v gh &>/dev/null; then
-    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-      | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-      | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg |
+      sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" |
+      sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
     sudo apt-get update -qq && sudo apt-get install -y gh
   fi
 
   # lazygit — latest binary
   if ! command -v lazygit &>/dev/null; then
-    LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
-      | grep -Po '"tag_name": *"v\K[^"]*')
+    LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" |
+      grep -Po '"tag_name": *"v\K[^"]*')
     curl -Lo /tmp/lazygit.tar.gz \
       "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
     tar -xf /tmp/lazygit.tar.gz -C /tmp lazygit
@@ -62,8 +60,8 @@ setup_linux() {
 }
 
 case "$OS" in
-  Darwin) setup_mac ;;
-  Linux)  setup_linux ;;
+Darwin) setup_mac ;;
+Linux) setup_linux ;;
 esac
 
 echo "→ Symlinking configs..."
@@ -111,24 +109,24 @@ add_source() {
   local file="$1"
   local line="source \"$DOTFILES/shell/exports.sh\""
   if [ -f "$file" ] && ! grep -q "dotfiles/shell/exports.sh" "$file"; then
-    echo "" >> "$file"
-    echo "# dotfiles" >> "$file"
-    echo "$line" >> "$file"
+    echo "" >>"$file"
+    echo "# dotfiles" >>"$file"
+    echo "$line" >>"$file"
   fi
 }
 
 case "$OS" in
-  Darwin)
-    add_source "$HOME/.zshrc"
-    add_source "$HOME/.bashrc"
-    if [ -f "$HOME/Library/Preferences/com.googlecode.iterm2.plist" ]; then
-      bash "$DOTFILES/iterm/apply-catppuccin.sh" || true
-    fi
-    ;;
-  Linux)
-    add_source "$HOME/.bashrc"
-    add_source "$HOME/.zshrc"
-    ;;
+Darwin)
+  add_source "$HOME/.zshrc"
+  add_source "$HOME/.bashrc"
+  if [ -f "$HOME/Library/Preferences/com.googlecode.iterm2.plist" ]; then
+    bash "$DOTFILES/iterm/apply-catppuccin.sh" || true
+  fi
+  ;;
+Linux)
+  add_source "$HOME/.bashrc"
+  add_source "$HOME/.zshrc"
+  ;;
 esac
 
 echo "✓ Done. Run: nvim"
