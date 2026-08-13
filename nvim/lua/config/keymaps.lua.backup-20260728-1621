@@ -47,22 +47,6 @@ end, { desc = "Terminal (vertical split)" })
 vim.keymap.set("n", "<leader>tt", "<cmd>terminal<cr>", { desc = "Terminal (buffer)" })
 vim.keymap.set("n", "<leader>tn", "<cmd>tabnew | terminal<cr>", { desc = "Terminal (new tab)" })
 
-vim.keymap.set("n", "<leader>td", function()
-  local cmd = vim.fn.exepath("lazydocker")
-  if cmd == "" then
-    vim.notify("lazydocker is not available in PATH", vim.log.levels.ERROR)
-    return
-  end
-
-  Snacks.terminal.toggle(cmd, {
-    win = {
-      position = "float",
-      width = 0.95,
-      height = 0.95,
-    },
-  })
-end, { desc = "LazyDocker" })
-
 vim.keymap.set("n", "<leader>fr", "<cmd>RenameFile<cr>", { desc = "Rename current file" })
 
 local function relative_file_path()

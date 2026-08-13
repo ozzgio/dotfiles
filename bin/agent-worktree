@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+Usage:
+  agent-worktree create <repo> <branch> [base]
+  agent-worktree list <repo>
+  agent-worktree path <repo> <branch>
+  agent-worktree prune <repo>
+
+Creates task worktrees beside the primary checkout:
+  <repo>-worktrees/<branch-with-slashes-replaced>
+
+The default base is main. When origin exists, create fetches the base and
+branches from origin/<base> so a new task never starts from a stale checkout.
+EOF
+  exit 2
+}
+
+resolve_primary_root() {
+  local repo_root
+  repo_root="$(git -C "$1" rev-parse --path-format=absolute --show-toplevel)"
+  git -C "$repo_root" worktree list --porcelain |
+    awk 'NR == 1 && $1 == "worktree" { print substr($0, 10); exit }'
+}
+
+worktree_path_for_branch() {
+  local primary_root="$1"
+  local branch="$2"
+  git -C "$primary_root" worktree list --porcelain |
+    awk -v wanted="refs/heads/$branch" '
+      $1 == "worktree" { path = substr($0, 10) }
+      $1 == "branch" && substr($0, 8) == wanted { print path; exit }
+    '
+}
+
+refuse_vault_worktree() {
+  local primary_root="$1"
+  if [ "$primary_root" = "/home/ozzo/obsidian-vault" ]; then
+    printf '%s\n' \
+      'obsidian-vault is the shared primary source of truth; worktrees are disabled.' \
+      'Run git -C /home/ozzo/obsidian-vault pull --ff-only origin main before writing.' >&2
+    exit 1
+  fi
+}
+
+command="${1:-}"
+[ -n "$command" ] || usage
+shift
+
+case "$command" in
+  create)
+    [ "$#" -ge 2 ] && [ "$#" -le 3 ] || usage
+    repo="$1"
+    branch="$2"
+    base="${3:-main}"
+    git check-ref-format --branch "$branch" >/dev/null
+
+    primary_root="$(resolve_primary_root "$repo")"
+    [ -n "$primary_root" ] || {
+      printf 'Could not resolve the primary worktree for %s.\n' "$repo" >&2
+      exit 1
+    }
+    refuse_vault_worktree "$primary_root"
+
+    existing="$(worktree_path_for_branch "$primary_root" "$branch")"
+    if [ -n "$existing" ]; then
+      printf '%s\n' "$existing"
+      exit 0
+    fi
+
+    repo_name="$(basename "$primary_root")"
+    safe_branch="$(printf '%s' "$branch" | sed 's#[^[:alnum:]._-]#-#g')"
+    worktree_root="${AGENT_WORKTREE_ROOT:-$(dirname "$primary_root")/${repo_name}-worktrees}"
+    target="$worktree_root/$safe_branch"
+
+    if [ -e "$target" ]; then
+      printf 'Target exists but is not the registered worktree for %s: %s\n' "$branch" "$target" >&2
+      exit 1
+    fi
+
+    mkdir -p "$worktree_root"
+
+    if git -C "$primary_root" show-ref --verify --quiet "refs/heads/$branch"; then
+      git -C "$primary_root" worktree add "$target" "$branch" >&2
+    else
+      start_ref="$base"
+      if git -C "$primary_root" remote get-url origin >/dev/null 2>&1; then
+        git -C "$primary_root" fetch origin "$base" >&2
+        start_ref="origin/$base"
+      fi
+      git -C "$primary_root" rev-parse --verify "${start_ref}^{commit}" >/dev/null
+      git -C "$primary_root" worktree add -b "$branch" "$target" "$start_ref" >&2
+    fi
+
+    printf '%s\n' "$target"
+    ;;
+
+  list)
+    [ "$#" -eq 1 ] || usage
+    primary_root="$(resolve_primary_root "$1")"
+    git -C "$primary_root" worktree list
+    ;;
+
+  path)
+    [ "$#" -eq 2 ] || usage
+    primary_root="$(resolve_primary_root "$1")"
+    target="$(worktree_path_for_branch "$primary_root" "$2")"
+    [ -n "$target" ] || {
+      printf 'No registered worktree for branch %s.\n' "$2" >&2
+      exit 1
+    }
+    printf '%s\n' "$target"
+    ;;
+
+  prune)
+    [ "$#" -eq 1 ] || usage
+    primary_root="$(resolve_primary_root "$1")"
+    git -C "$primary_root" worktree prune -v
+    ;;
+
+  *)
+    usage
+    ;;
+esac

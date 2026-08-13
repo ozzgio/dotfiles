@@ -29,11 +29,7 @@ choice="$(
 if [ "$choice" = "[new worktree]" ]; then
   read -r -p "branch name > " branch
   [ -n "$branch" ] || exit 0
-  safe_branch="$(printf '%s' "$branch" | sed 's#[/[:space:]]#-#g')"
-  repo_name="$(basename "$main_root")"
-  target="$(dirname "$main_root")/${repo_name}-worktrees/${safe_branch}"
-  mkdir -p "$(dirname "$target")"
-  git -C "$main_root" worktree add -b "$branch" "$target"
+  target="$(agent-worktree create "$main_root" "$branch")"
 else
   branch="${choice%%$'\t'*}"
   target="${choice#*$'\t'}"

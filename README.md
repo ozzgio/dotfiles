@@ -30,6 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/ozzgio/dotfiles/main/bootstrap.sh |
 | `cc` / `cy` | Run Claude Code with permission prompts skipped |
 | `cx` / `cdx` | Run Codex with `--yolo` |
 | `ccglm` | Run Claude Code through the local `claude-glm` Z.ai/GLM settings |
+| `agent-worktree create <repo> <branch> [base]` | Create an isolated, fresh task worktree for any coding agent |
 
 Private AI provider secrets are loaded from:
 
@@ -95,3 +96,7 @@ Inside tmux:
 | `<prefix> w` | Pick or create a git worktree for the current repo |
 | `<prefix> r` | Reload tmux config |
 `tmux-sessionizer` searches these roots by default: `~/code`, `~/Documents/code`, `~/projects`, `~/.dotfiles`, and `/Volumes/P3 1/repo`. Override them with a colon-separated `TMS_DIRS` value in your shell config.
+
+All writing agents use the same worktree contract. See
+[`docs/agent-worktrees.md`](docs/agent-worktrees.md) for task isolation,
+publishing gates, and cleanup rules.
