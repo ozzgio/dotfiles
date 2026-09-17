@@ -15,7 +15,9 @@ setup_mac() {
   command -v brew &>/dev/null ||
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   brew bundle --file="$DOTFILES/Brewfile"
-  brew list --cask iterm2 &>/dev/null && brew uninstall --cask iterm2
+  if brew list --cask iterm2 &>/dev/null; then
+    brew uninstall --cask iterm2
+  fi
 }
 
 setup_linux() {
