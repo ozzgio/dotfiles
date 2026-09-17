@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+Usage:
+  gitea-merge <pr-number> [repo]
+  gitea-merge --now <pr-number> [repo]
+
+Schedules a Gitea pull request to merge when its required checks succeed.
+With --now, merges immediately instead and fails if checks are not green.
+
+The repo defaults to the current directory. The remote must be a Gitea host;
+GitHub and every other forge is refused, because only Gitea merges are
+pre-authorized (see ~/.dotfiles/docs/agent-worktrees.md).
+
+Token: ~/.config/gitea/token, mode 600, a Gitea PAT with write:repository.
+Set GITEA_INSECURE=1 for a self-signed certificate (git.nuc uses one).
+EOF
+  exit 2
+}
+
+when_checks_succeed=true
+case "${1-}" in
+  --now) when_checks_succeed=false; shift ;;
+  -h|--help|"") usage ;;
+esac
+
+pr="${1-}"
+repo="${2-$PWD}"
+[[ "$pr" =~ ^[0-9]+$ ]] || usage
+
+token_file="$HOME/.config/gitea/token"
+if [[ ! -f "$token_file" ]]; then
+  echo "gitea-merge: no token at $token_file" >&2
+  exit 1
+fi
+if [[ "$(stat -c%a "$token_file")" != "600" ]]; then
+  echo "gitea-merge: $token_file must be mode 600" >&2
+  exit 1
+fi
+
+remote="$(git -C "$repo" remote get-url origin)"
+# ssh://git@host:2222/owner/name.git, git@host:owner/name.git, https://host/owner/name.git
+host="$(sed -E 's#^[a-z+]+://##; s#^[^@]*@##; s#[:/].*$##' <<<"$remote")"
+path="$(sed -E 's#\.git$##; s#^.*[:/]([^/]+/[^/]+)$#\1#' <<<"$remote")"
+if [[ -z "$host" || -z "$path" || "$path" != */* ]]; then
+  echo "gitea-merge: cannot parse owner/name from $remote" >&2
+  exit 1
+fi
+if [[ "$host" == github.com || "$host" == *.github.com ]]; then
+  echo "gitea-merge: $host is not Gitea; merge there stays gated" >&2
+  exit 1
+fi
+
+api="https://$host/api/v1"
+curl_opts=(--silent --show-error)
+[[ "${GITEA_INSECURE-0}" == 1 ]] && curl_opts+=(--insecure)
+
+if ! curl "${curl_opts[@]}" --fail "$api/version" | grep -q '"version"'; then
+  echo "gitea-merge: $host does not answer the Gitea API; refusing" >&2
+  exit 1
+fi
+
+body="$(printf '{"Do":"merge","merge_when_checks_succeed":%s}' "$when_checks_succeed")"
+status="$(curl "${curl_opts[@]}" --output /dev/stderr --write-out '%{http_code}' \
+  --request POST "$api/repos/$path/pulls/$pr/merge" \
+  --header "Authorization: token $(cat "$token_file")" \
+  --header "Content-Type: application/json" \
+  --data "$body")"
+
+case "$status" in
+  200|201)
+    if [[ "$when_checks_succeed" == true ]]; then
+      echo "gitea-merge: $path#$pr will merge when checks succeed"
+    else
+      echo "gitea-merge: $path#$pr merged"
+    fi
+    ;;
+  401|403) echo "gitea-merge: token rejected ($status); needs write:repository on $path" >&2; exit 1 ;;
+  405) echo "gitea-merge: $path#$pr is not mergeable yet ($status)" >&2; exit 1 ;;
+  *) echo "gitea-merge: merge failed with HTTP $status" >&2; exit 1 ;;
+esac

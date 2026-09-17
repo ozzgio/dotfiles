@@ -78,6 +78,10 @@ Set `AGENT_WORKTREE_ROOT` only when a repository needs a different parent.
   record the worktree path and branch in the session log.
 - Commit, push, PR creation, merge, deploy, and deletion retain their existing
   authorization gates. Worktree isolation does not grant broader permission.
+- Exception, self-hosted Gitea repositories only: merging a pull request whose
+  required checks are green needs no further approval, including scheduling
+  Gitea's merge-when-checks-succeed. Push, deploy, deletion, and every gate on
+  non-Gitea remotes are unchanged.
 
 ## Inspect and clean up
 

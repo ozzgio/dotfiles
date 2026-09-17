@@ -14,9 +14,14 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$HOME/.claude/plugins/cache/ponytail/ponytail/4.9.0/hooks/ponytail-statusline.sh\""
+  },
   "enabledPlugins": {
     "ponytail@ponytail": true,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "ruby-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "ponytail": {
@@ -30,5 +35,38 @@
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark-ansi",
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: None configured",
+      "**Repository visibility**: Not queryable via gh (remote is a raw IP/port, not a supported host shape) — infer from README: described as a \"Private Rails app for personal finance review\" on a self-hosted Gitea (git.nuc) at 192.168.1.44:2222; treat as private",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: Local files only — `/home/ozzo/.config/finance-game/secret_key_base`, SSH deploy key at `/home/ozzo/.ssh/finance-game-vault/`, and `config/*.key` / `config/credentials.yml.enc` (gitignored/encrypted Rails credentials) — not a managed secrets service",
+      "**Default / protected branches**: main (default branch; protection status not queryable — gh check did not run against this remote)",
+      "**CI/CD deploy targets**: NUC (192.168.1.44) — pushing to `main` triggers CI that shallow-clones `main` and deploys via `docker-compose.nuc.yml` on the NUC; the NUC is described as the only finance writer",
+      "**Network posture**: None configured",
+      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine with open internet",
+      "**Source control**: This repo's remote only — `ssh://192.168.1.44:2222/ozzo/finance-game.git` (git.nuc, self-hosted Gitea)",
+      "**Trusted internal domains**: git.nuc (self-hosted Gitea host contacted 64× in this project's transcripts)",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: git.nuc (Gitea instance at 192.168.1.44:2222, also referenced as the issue tracker for this repo's Wayfinder map)",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: `/home/ozzo/obsidian-vault/finance/` (finance source-of-truth notes), `config/credentials.yml.enc`, `config/*.key`, `/home/ozzo/.config/finance-game/secret_key_base`, `/home/ozzo/.ssh/finance-game-vault/` (deploy key + known_hosts), and sqlite DBs under `/home/ozzo/code/finance-game/storage` on the NUC — share only with the repo owner (ozzo)",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace/host/container with `prod`/`production` as a whole word or segment; note the NUC production deploy path (`docker-compose.nuc.yml`, live containers, storage bind) is a de facto production target even though it is not literally named `prod`",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic; treat the NUC compose deployment and its storage bind/sqlite DBs as sensitive-remote-target-equivalent",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development (personal finance Rails app)",
+      "**Trusted repo**: `/home/ozzo/code/finance-game` and its remote `ssh://192.168.1.44:2222/ozzo/finance-game.git` — treat as private; only this repo's own work belongs here, and the vault (`/home/ozzo/obsidian-vault`) is a separate shared source of truth that must not have its rules/taxonomy/state duplicated into this repo",
+      "**Org-specific CLIs**: `agent-worktree` (used 8× in this project; wraps git-worktree creation per `~/.dotfiles/docs/agent-worktrees.md`)",
+      "Routine under this repo's `/home/ozzo/code/finance-game` prefix: reading `bin/`, running `bin/rails`, `bin/dev`, `df`/`du`/`pwd` for local disk checks are ordinary developer workflow here"
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Bash(git push:*) on the vault repo at /home/ozzo/obsidian-vault — cross-repo pushes from this project should be flagged, since the vault is a separate shared source of truth with its own writer-coordination rules"
+    ]
+  }
 }
