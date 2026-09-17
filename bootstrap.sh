@@ -15,6 +15,7 @@ setup_mac() {
   command -v brew &>/dev/null ||
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   brew bundle --file="$DOTFILES/Brewfile"
+  brew list --cask iterm2 &>/dev/null && brew uninstall --cask iterm2
 }
 
 setup_linux() {
@@ -95,6 +96,10 @@ ln -sfn "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
 # tmux
 ln -sfn "$DOTFILES/tmux/tmux.conf" "$HOME/.tmux.conf"
 
+# ghostty
+mkdir -p "$HOME/.config/ghostty"
+ln -sfn "$DOTFILES/ghostty/config.ghostty" "$HOME/.config/ghostty/config.ghostty"
+
 # local scripts
 mkdir -p "$HOME/.local/bin"
 for script in "$DOTFILES"/bin/*; do
@@ -119,9 +124,6 @@ case "$OS" in
 Darwin)
   add_source "$HOME/.zshrc"
   add_source "$HOME/.bashrc"
-  if [ -f "$HOME/Library/Preferences/com.googlecode.iterm2.plist" ]; then
-    bash "$DOTFILES/iterm/apply-catppuccin.sh" || true
-  fi
   ;;
 Linux)
   add_source "$HOME/.bashrc"

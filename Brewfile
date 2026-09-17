@@ -24,7 +24,7 @@ if OS.mac?
   # Apps
   cask 'bitwarden'
   cask 'hiddenbar'
-  cask 'iterm2'
+  cask 'ghostty'
   cask 'karabiner-elements'
   cask 'numi'
   cask 'obsidian'

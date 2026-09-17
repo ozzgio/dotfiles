@@ -14,6 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/ozzgio/dotfiles/main/bootstrap.sh |
 |--------|----------|
 | Neovim (LazyVim) | `~/.config/nvim` |
 | Herdr | `~/.config/herdr/config.toml` |
+| Ghostty | `~/.config/ghostty/config.ghostty` |
 | tmux | `~/.tmux.conf` |
 | Claude | `~/.claude/settings.json` |
 | Codex | host-local `~/.codex/config.toml` from `codex/config.<OS>.toml` |
@@ -60,13 +61,8 @@ Inside Herdr:
 | `<prefix> alt-a` | Start Claude Code in a pane |
 | `<prefix> alt-m` | Start GLM in a pane |
 
-On macOS, set iTerm2 Option handling so Herdr receives these shortcuts:
-
-```text
-iTerm2 -> Settings -> Profiles -> Keys -> Left Option key -> Esc+
-```
-
-Do the same for Right Option if you use it.
+Ghostty is configured to treat Option as Alt on macOS, so Herdr receives these
+shortcuts without terminal-specific setup.
 
 In LazyVim:
 

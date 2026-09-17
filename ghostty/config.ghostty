@@ -1,0 +1,6 @@
+# Built-in Ghostty theme; reload with Cmd+Shift+, on macOS.
+theme = Catppuccin Mocha
+font-family = JetBrains Mono
+font-size = 14
+macos-option-as-alt = true
+macos-titlebar-style = transparent
