@@ -51,6 +51,32 @@ setup_linux() {
     rm /tmp/lazygit.tar.gz /tmp/lazygit
   fi
 
+  # tea — Gitea CLI. Deliberately Linux-only and kept out of the Brewfile, which also runs on the
+  # MacBook: only this box talks to a Gitea remote. Installed to ~/.local/bin rather than
+  # /usr/local/bin so it needs no sudo, and so it wins the name against the unrelated `tea`
+  # package (a Qt text editor) in Ubuntu's archive. Log in with the same PAT that
+  # bin/gitea-merge uses:
+  #   tea login add --name $(hostname) --url https://$(hostname) \
+  #     --token "$(cat ~/.config/gitea/token)" --insecure
+  if ! command -v tea &>/dev/null; then
+    TEA_VERSION=$(curl -s "https://gitea.com/api/v1/repos/gitea/tea/releases?limit=1" |
+      grep -Po '"tag_name": *"v\K[^"]*')
+    TEA_ASSET="tea-${TEA_VERSION}-linux-amd64"
+    curl -fLo "/tmp/$TEA_ASSET" \
+      "https://gitea.com/gitea/tea/releases/download/v${TEA_VERSION}/${TEA_ASSET}"
+    curl -fsLo /tmp/tea-checksums.txt \
+      "https://gitea.com/gitea/tea/releases/download/v${TEA_VERSION}/checksums.txt"
+    tea_expected=$(awk -v a="$TEA_ASSET" '$2 == a {print $1}' /tmp/tea-checksums.txt)
+    tea_actual=$(sha256sum "/tmp/$TEA_ASSET" | cut -d' ' -f1)
+    if [ -z "$tea_expected" ] || [ "$tea_expected" != "$tea_actual" ]; then
+      echo "tea: checksum verification failed" >&2
+      exit 1
+    fi
+    mkdir -p "$HOME/.local/bin"
+    install -m 0755 "/tmp/$TEA_ASSET" "$HOME/.local/bin/tea"
+    rm -f "/tmp/$TEA_ASSET" /tmp/tea-checksums.txt
+  fi
+
   # herdr — terminal-native agent multiplexer
   if ! command -v herdr &>/dev/null; then
     curl -fsSL https://herdr.dev/install.sh | sh
