@@ -16,6 +16,9 @@ pre-authorized (see ~/.dotfiles/docs/agent-worktrees.md).
 
 Token: ~/.config/gitea/token, mode 600, a Gitea PAT with write:repository.
 Set GITEA_INSECURE=1 for a self-signed certificate (git.nuc uses one).
+API host: parsed from the remote for https remotes. An ssh remote only names the
+ssh endpoint, so set the API host once with
+`git config --global gitea.host git.nuc` (or GITEA_HOST=git.nuc per invocation).
 EOF
   exit 2
 }
@@ -42,7 +45,12 @@ fi
 
 remote="$(git -C "$repo" remote get-url origin)"
 # ssh://git@host:2222/owner/name.git, git@host:owner/name.git, https://host/owner/name.git
-host="$(sed -E 's#^[a-z+]+://##; s#^[^@]*@##; s#[:/].*$##' <<<"$remote")"
+parsed_host="$(sed -E 's#^[a-z+]+://##; s#^[^@]*@##; s#[:/].*$##' <<<"$remote")"
+# An ssh remote names the *ssh* endpoint, not the web/API one, so the API host is
+# resolved separately: GITEA_HOST, else `git config [--global] gitea.host`, else
+# the host parsed out of the remote (correct for https remotes).
+host="${GITEA_HOST:-$(git -C "$repo" config --get gitea.host || true)}"
+host="${host:-$parsed_host}"
 path="$(sed -E 's#\.git$##; s#^.*[:/]([^/]+/[^/]+)$#\1#' <<<"$remote")"
 if [[ -z "$host" || -z "$path" || "$path" != */* ]]; then
   echo "gitea-merge: cannot parse owner/name from $remote" >&2
