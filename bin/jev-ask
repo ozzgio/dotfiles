@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""jev-ask — ask TypeSafe's Jev (typesafe/jev) for ONE calibrated decision.
+
+Jev is a decision model: it returns probabilities, never text. Use it where a
+script needs a single judgment to branch on, not as a chat model.
+
+    jev-ask "Payments failed for three days." "Does this need urgent attention?"
+    jev-ask -t choice "Deploy broke the API." "Who owns this?" -c "ops=infra,app=product"
+    jev-ask -t score  "Disk at 96%." "How bad is it?" -c "fine,watch,act-now"
+
+Exit codes: 0 yes/ok | 1 no (noul below threshold) | 2 usage | 3 API error
+For choice/score the exit code is 0 unless --threshold is given, which compares
+against the winning confidence.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+USER_AGENT = os.getenv("JEV_USER_AGENT", "jev-ask/1.0 (+https://commandcode.ai)")
+ENDPOINT = "https://api.commandcode.ai/provider/v1/systemone"
+MODEL = "typesafe/jev"
+CRED_PATHS = [
+    Path(os.getenv("COMMANDCODE_AUTH", "")) if os.getenv("COMMANDCODE_AUTH") else None,
+    Path.home() / ".commandcode" / "auth.json",
+]
+
+
+def api_key() -> str:
+    for env in ("COMMANDCODE_API_KEY", "CMD_API_KEY"):
+        v = (os.getenv(env) or "").strip()
+        if v:
+            return v
+    for path in CRED_PATHS:
+        if path and path.exists():
+            try:
+                data = json.loads(path.read_text())
+            except Exception:
+                continue
+            for field in ("apiKey", "api_key", "token"):
+                v = str(data.get(field) or "").strip()
+                if v:
+                    return v
+    sys.exit("jev-ask: no CommandCode key (set COMMANDCODE_API_KEY or ~/.commandcode/auth.json)")
+
+
+def parse_criteria(spec: str | None, qtype: str):
+    if not spec:
+        return None
+    if qtype == "score":
+        levels = [p.strip() for p in spec.split(",") if p.strip()]
+        if len(levels) < 2:
+            sys.exit("jev-ask: --criteria for score needs at least two levels, lowest first")
+        return levels
+    out = {}
+    for part in spec.split(","):
+        if "=" not in part:
+            sys.exit("jev-ask: --criteria for noul/choice must be key=description pairs")
+        k, v = part.split("=", 1)
+        out[k.strip()] = v.strip()
+    return out or None
+
+
+def call(body: dict) -> dict:
+    body.setdefault("model", MODEL)
+    req = urllib.request.Request(
+        ENDPOINT,
+        data=json.dumps(body).encode(),
+        headers={
+            "Authorization": "Bearer " + api_key(),
+            "Content-Type": "application/json",
+            # Explicit UA: the default Python-urllib one is refused by the edge
+            # WAF with 403 / error 1010.
+            "User-Agent": USER_AGENT,
+        },
+        method="POST",
+    )
+    # NOTE: deliberately no x-cmd-zdr header — Jev has no ZDR-capable upstream and
+    # a ZDR request for it is refused with 422 (cmd_zdr_no_providers).
+    try:
+        with urllib.request.urlopen(req, timeout=float(os.getenv("JEV_TIMEOUT", "60"))) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        sys.exit(f"jev-ask: HTTP {e.code} from systemone: {e.read()[:300].decode(errors='replace')}")
+    except Exception as e:
+        sys.exit(f"jev-ask: {e}")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(add_help=True, description="One calibrated decision from typesafe/jev.")
+    ap.add_argument("state", nargs="?", help="the state to judge; '-' reads stdin")
+    ap.add_argument("question", nargs="?", help="what to ask about the state")
+    ap.add_argument("--body", metavar="FILE", help="send a full systemone JSON body ('-' = stdin)")
+    ap.add_argument("-t", "--type", default="noul", choices=("noul", "choice", "score"))
+    ap.add_argument("-i", "--instructions", help="instructions for the question (default: the question)")
+    ap.add_argument("-c", "--criteria", help="choice: k=desc,k=desc | score: level,level,level")
+    ap.add_argument("-n", "--name", default="answer", help="answer key (default: answer)")
+    ap.add_argument("--threshold", type=float, help="noul: yes if p >= T; choice/score: compare confidence")
+    ap.add_argument("--json", action="store_true", help="print the whole response envelope")
+    ap.add_argument("--raw", action="store_true", help="print only the answer value")
+    a = ap.parse_args()
+
+    if a.body:
+        raw = sys.stdin.read() if a.body == "-" else Path(a.body).read_text()
+        try:
+            body = json.loads(raw)
+        except Exception as e:
+            sys.exit(f"jev-ask: --body is not valid JSON: {e}")
+    else:
+        if not a.state or not a.question:
+            sys.exit("jev-ask: need STATE and QUESTION (or --body)")
+        state = sys.stdin.read() if a.state == "-" else a.state
+        q = {"type": a.type, "instructions": a.instructions or a.question}
+        crit = parse_criteria(a.criteria, a.type)
+        if crit is not None:
+            q["criteria"] = crit
+        body = {"state": state, "questions": {a.name: q}}
+
+    resp = call(body)
+    if a.json or a.body:
+        print(json.dumps(resp, indent=2, ensure_ascii=False))
+        return 0
+
+    ans = (resp.get("answers") or {}).get(a.name)
+    if not ans:
+        sys.exit("jev-ask: no answer in response")
+
+    t = ans.get("type")
+    if t == "noul":
+        p = float(ans.get("noul", 0.0))
+        print(f"{p:.3f}" if a.raw else f"yes_probability={p:.3f}")
+        return 0 if p >= (a.threshold if a.threshold is not None else 0.5) else 1
+    if t == "choice":
+        pick, conf = ans.get("choice"), float(ans.get("confidence", 0.0))
+        print(pick if a.raw else f"choice={pick} confidence={conf:.3f}")
+        return 0 if conf >= (a.threshold if a.threshold is not None else 0.0) else 1
+    if t == "score":
+        val, conf = ans.get("score"), float(ans.get("confidence", 0.0))
+        print(f"{val:.2f}" if a.raw else f"score={val:.2f} confidence={conf:.3f}")
+        return 0 if conf >= (a.threshold if a.threshold is not None else 0.0) else 1
+    sys.exit(f"jev-ask: unexpected answer type {t!r}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

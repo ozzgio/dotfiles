@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+"""nuc-triage — one calibrated judgment per host finding, via Jev (typesafe/jev).
+
+Read-only. Gathers the signals that could plausibly need action on this NUC
+(unhealthy containers, failed units, disk pressure, load), then asks Jev one
+yes/no per finding in a single request and prints them ranked.
+
+    nuc-triage                 # human summary
+    nuc-triage --json          # machine readable
+    nuc-triage -t 0.7          # urgency threshold (default 0.6)
+
+Exit codes: 0 nothing urgent | 1 at least one finding above threshold
+            2 usage/error | 3 the decision model was unreachable
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+JEV = shutil.which("jev-ask") or str(Path.home() / ".dotfiles" / "bin" / "jev-ask")
+
+
+def run(cmd: list[str], timeout: int = 20) -> str:
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return (p.stdout or "") + (p.stderr or "")
+    except Exception as e:
+        return f"(failed: {e})"
+
+
+def findings() -> list[tuple[str, str]]:
+    """Return (severity, description) pairs — only things that plausibly need action."""
+    out: list[tuple[str, str]] = []
+
+    ps = run(["docker", "ps", "-a", "--format", "{{.Names}}\t{{.State}}\t{{.Status}}"])
+    for line in ps.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 3:
+            continue
+        name, state, status = parts[0], parts[1].lower(), parts[2]
+        if state != "running":
+            out.append(("high", f"container '{name}' is {state} (not running)"))
+        elif "unhealthy" in status.lower():
+            out.append(("high", f"container '{name}' reports unhealthy: {status}"))
+        elif "restarting" in status.lower():
+            out.append(("high", f"container '{name}' is restarting: {status}"))
+
+    for scope, label in ((["--failed"], "system"), (["--user", "--failed"], "user")):
+        txt = run(["systemctl", *scope, "--no-legend"])
+        for line in txt.splitlines():
+            line = line.strip()
+            if line and "0 loaded units" not in line:
+                out.append(("high", f"{label} systemd unit failed: {line[:110]}"))
+
+    for mount, warn in (("/", 85), ("/mnt/storage", 90)):
+        txt = run(["df", "-P", mount])
+        for line in txt.splitlines()[1:]:
+            cols = line.split()
+            if len(cols) >= 5 and cols[4].endswith("%"):
+                used = int(cols[4].rstrip("%"))
+                if used >= warn:
+                    free_g = int(cols[3]) / 1e6
+                    out.append(("med", f"{mount} is {used}% full ({free_g:.1f} GB free)"))
+
+    try:
+        load1 = float(Path("/proc/loadavg").read_text().split()[0])
+        cores = int(run(["nproc"]).strip() or 1)
+        if load1 > 2 * cores:
+            out.append(("med", f"load average {load1:.1f} on {cores} cores"))
+    except Exception:
+        pass
+
+    return out
+
+
+def ask_jev(items: list[tuple[str, str]]) -> list[float]:
+    state = "Host findings on the NUC:\n" + "\n".join(
+        f"{i}. [{sev}] {desc}" for i, (sev, desc) in enumerate(items, 1))
+    questions = {
+        f"f{i}": {
+            "type": "noul",
+            "instructions": f"Finding {i} ({sev}): does this need a human's attention today?",
+            "criteria": {"true": "needs action today", "false": "benign, expected, or self-healing"},
+        }
+        for i, (sev, _desc) in enumerate(items, 1)
+    }
+    body = json.dumps({"state": state, "questions": questions})
+    p = subprocess.run([JEV, "--body", "-", "--json"], input=body,
+                       capture_output=True, text=True, timeout=120)
+    if p.returncode != 0:
+        print(p.stderr.strip() or "nuc-triage: jev-ask failed", file=sys.stderr)
+        sys.exit(3)
+    answers = (json.loads(p.stdout) or {}).get("answers") or {}
+    out = []
+    for i in range(1, len(items) + 1):
+        a = answers.get(f"f{i}") or {}
+        out.append(float(a.get("noul", 0.0)))
+    return out
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Calibrated host triage via Jev.")
+    ap.add_argument("-t", "--threshold", type=float, default=0.6)
+    ap.add_argument("--json", action="store_true")
+    a = ap.parse_args()
+
+    items = findings()
+    if not items:
+        print("nuc-triage: nothing to triage" if not a.json else '{"findings": [], "urgent": 0}')
+        return 0
+
+    probs = ask_jev(items)
+    rows = sorted(
+        ({"severity": sev, "finding": desc, "urgent_probability": p}
+         for (sev, desc), p in zip(items, probs)),
+        key=lambda r: r["urgent_probability"], reverse=True,
+    )
+    urgent = [r for r in rows if r["urgent_probability"] >= a.threshold]
+
+    if a.json:
+        print(json.dumps({"threshold": a.threshold, "findings": rows, "urgent": len(urgent)},
+                         indent=2, ensure_ascii=False))
+    else:
+        print(f"{len(rows)} finding(s), {len(urgent)} above {a.threshold:.2f}:")
+        for r in rows:
+            flag = "URGENT" if r in urgent else "  ok  "
+            print(f"  [{flag}] p={r['urgent_probability']:.3f} ({r['severity']}) {r['finding']}")
+    return 1 if urgent else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
