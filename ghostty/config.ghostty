@@ -1,5 +1,5 @@
 # Built-in Ghostty theme; reload with Cmd+Shift+, on macOS.
-theme = Kanagawa Dragon
+theme = Bright Lights
 font-family = JetBrains Mono
 font-size = 14
 macos-option-as-alt = true
