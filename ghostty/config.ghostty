@@ -1,6 +1,35 @@
-# Built-in Ghostty theme; reload with Cmd+Shift+, on macOS.
-theme = Bright Lights
+# Catppuccin Mocha colours with neutral text
+theme = Catppuccin Mocha
+
+# Typography
 font-family = JetBrains Mono
-font-size = 14
+font-size = 15
+
+# Neutral grey text on dark charcoal
+background = #1e1e24
+foreground = #d4d4d4
+background-opacity = 1
+
+# Keep ANSI white neutral too
+palette = 7=#d4d4d4
+palette = 15=#eeeeee
+
+# Improve colours that would otherwise be hard to read
+minimum-contrast = 3
+
+# Clear selection
+selection-background = #454554
+selection-foreground = #eeeeee
+
+# Orange cursor
+cursor-color = #fab387
+cursor-text = #1e1e24
+cursor-style-blink = false
+
+# Space around the text
+window-padding-x = 10
+window-padding-y = 8
+
+# macOS
 macos-option-as-alt = true
 macos-titlebar-style = transparent
